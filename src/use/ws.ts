@@ -1,5 +1,5 @@
 import type * as http from 'http';
-import type * as ws from 'ws';
+import type * as ws from 'isomorphic-ws';
 import { handleProtocols, makeServer, ServerOptions } from '../server';
 import {
   DEPRECATED_GRAPHQL_WS_PROTOCOL,
@@ -39,17 +39,17 @@ export interface Extra {
 export function useServer<
   P extends ConnectionInitMessage['payload'] = ConnectionInitMessage['payload'],
   E extends Record<PropertyKey, unknown> = Record<PropertyKey, never>,
->(
-  options: ServerOptions<P, Extra & Partial<E>>,
-  ws: WebSocketServer,
-  /**
-   * The timout between dispatched keep-alive messages. Internally uses the [ws Ping and Pongs]((https://developer.mozilla.org/en-US/docs/Web/API/wss_API/Writing_ws_servers#Pings_and_Pongs_The_Heartbeat_of_wss))
-   * to check that the link between the clients and the server is operating and to prevent the link
-   * from being broken due to idling.
-   *
-   * @default 12_000 // 12 seconds
-   */
-  keepAlive = 12_000,
+  >(
+    options: ServerOptions<P, Extra & Partial<E>>,
+    ws: WebSocketServer,
+    /**
+     * The timout between dispatched keep-alive messages. Internally uses the [ws Ping and Pongs]((https://developer.mozilla.org/en-US/docs/Web/API/wss_API/Writing_ws_servers#Pings_and_Pongs_The_Heartbeat_of_wss))
+     * to check that the link between the clients and the server is operating and to prevent the link
+     * from being broken due to idling.
+     *
+     * @default 12_000 // 12 seconds
+     */
+    keepAlive = 12_000,
 ): Disposable {
   const isProd = process.env.NODE_ENV === 'production';
   const server = makeServer(options);
@@ -59,7 +59,7 @@ export function useServer<
   ws.once('error', (err) => {
     console.error(
       'Internal error emitted on the WebSocket server. ' +
-        'Please check your implementation.',
+      'Please check your implementation.',
       err,
     );
 
@@ -87,7 +87,7 @@ export function useServer<
     socket.once('error', (err) => {
       console.error(
         'Internal error emitted on a WebSocket socket. ' +
-          'Please check your implementation.',
+        'Please check your implementation.',
         err,
       );
       socket.close(
@@ -103,24 +103,24 @@ export function useServer<
     const pingInterval =
       keepAlive > 0 && isFinite(keepAlive)
         ? setInterval(() => {
-            // ping pong on open sockets only
-            if (socket.readyState === socket.OPEN) {
-              // terminate the connection after pong wait has passed because the client is idle
-              pongWait = setTimeout(() => {
-                socket.terminate();
-              }, keepAlive);
+          // ping pong on open sockets only
+          if (socket.readyState === socket.OPEN) {
+            // terminate the connection after pong wait has passed because the client is idle
+            pongWait = setTimeout(() => {
+              socket.terminate();
+            }, keepAlive);
 
-              // listen for client's pong and stop socket termination
-              socket.once('pong', () => {
-                if (pongWait) {
-                  clearTimeout(pongWait);
-                  pongWait = null;
-                }
-              });
+            // listen for client's pong and stop socket termination
+            socket.once('pong', () => {
+              if (pongWait) {
+                clearTimeout(pongWait);
+                pongWait = null;
+              }
+            });
 
-              socket.ping();
-            }
-          }, keepAlive)
+            socket.ping();
+          }
+        }, keepAlive)
         : null;
 
     const closed = server.opened(
@@ -139,7 +139,7 @@ export function useServer<
             } catch (err) {
               console.error(
                 'Internal error occurred during message handling. ' +
-                  'Please check your implementation.',
+                'Please check your implementation.',
                 err,
               );
               socket.close(
@@ -164,7 +164,7 @@ export function useServer<
       )
         console.warn(
           `Client provided the unsupported and deprecated subprotocol "${socket.protocol}" used by subscriptions-transport-ws.` +
-            'Please see https://www.apollographql.com/docs/apollo-server/data/subscriptions/#switching-from-subscriptions-transport-ws.',
+          'Please see https://www.apollographql.com/docs/apollo-server/data/subscriptions/#switching-from-subscriptions-transport-ws.',
         );
       closed(code, String(reason));
     });
